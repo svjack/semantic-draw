@@ -1,4 +1,122 @@
-<div align="center">
+```python
+from diffusers import StableDiffusionXLPipeline
+import torch
+import re
+import os
+
+# 初始化 pipeline（只执行一次）
+pipeline = StableDiffusionXLPipeline.from_pretrained(
+    "cagliostrolab/animagine-xl-3.1",
+    torch_dtype=torch.float16
+).to("cuda")
+
+def sanitize_filename(prompt):
+    """
+    将 prompt 转换为合法的文件名（去掉非法字符）
+    
+    :param prompt: 原始 prompt
+    :return: 合法的文件名
+    """
+    # 去掉特殊字符，只保留字母、数字、下划线和空格
+    sanitized = re.sub(r'[^\w\s-]', '', prompt)
+    # 将空格替换为下划线
+    sanitized = sanitized.replace(' ', '_')
+    # 限制文件名长度（避免过长）
+    return sanitized[:50]  # 最多保留 50 个字符
+
+def generate_and_save_image(pipeline, prompt, negative_prompt, seed, save_dir="output_images"):
+    """
+    生成图片并保存到本地，文件名根据 prompt 生成
+
+    :param pipeline: 已初始化的 StableDiffusionXLPipeline 对象
+    :param prompt: 生成图片的正向提示词
+    :param negative_prompt: 生成图片的负向提示词
+    :param seed: 随机种子
+    :param save_dir: 图片保存的目录，默认为 "output_images"
+    """
+    # 确保保存目录存在
+    os.makedirs(save_dir, exist_ok=True)
+
+    # 生成图片
+    image = pipeline(
+        prompt=prompt,
+        negative_prompt=negative_prompt,
+        generator=torch.manual_seed(seed),
+    ).images[0]
+
+    # 根据 prompt 生成文件名
+    filename = sanitize_filename(prompt) + f"_seed_{seed}.png"
+    save_path = os.path.join(save_dir, filename)
+
+    # 保存图片（不调整大小）
+    image.save(save_path)
+    print(f"Generated and saved: {save_path}")
+
+# 定义所有调用参数
+calls = [
+    {
+        "prompt": "couple ,ZHONGLI, NINGGUANG\(genshin impact\) highres, masterpiece, pack clothes in a bag",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 0
+    },
+    {
+        "prompt": "COUPLE ,KAEDEHARA KAZUHA, NINGGUANG\(genshin impact\) highres, masterpiece, pack clothes in a bag",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 0
+    },
+    {
+        "prompt": "COUPLE ,KAEDEHARA KAZUHA, scaramouche\(genshin impact\) highres, masterpiece, pack clothes in a bag",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 0
+    },
+    {
+        "prompt": "COUPLE ,KAEDEHARA KAZUHA, scaramouche\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 10
+    },
+    {
+        "prompt": "COUPLE ,LYNEY, THOMA\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 10
+    },
+    {
+        "prompt": "COUPLE ,LYNEY, THOMA\(genshin impact\) highres, masterpiece, serve noodles in a bowl",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 10
+    },
+    {
+        "prompt": "TRIPLE ,KAEDEHARA KAZUHA, SCARAMOUCHE, ZHONGLI\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 10
+    },
+    {
+        "prompt": "TRIPLE ,KAEDEHARA KAZUHA, NAHIDA, SCARAMOUCHE\(genshin impact\) highres, masterpiece, pack clothes in a bag",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 12
+    },
+    {
+        "prompt": "TRIPLE ,KAEDEHARA KAZUHA, SCARAMOUCHE, ZHONGLI\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 10
+    },
+    {
+        "prompt": "In a Bar ,TRIPLE ,KAEDEHARA KAZUHA, SCARAMOUCHE, ZHONGLI\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 100
+    },
+    {
+        "prompt": "In a Swimming Pool ,TRIPLE ,KAEDEHARA KAZUHA, SCARAMOUCHE, ZHONGLI\(genshin impact\) highres, masterpiece, drink beverages through a straw",
+        "negative_prompt": "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],",
+        "seed": 8
+    }
+]
+
+# 批量生成图片
+for call in calls:
+    generate_and_save_image(pipeline, **call)
+```
+
+<div align="center">  
 
 <h1>StreamMultiDiffusion: Real-Time Interactive Generation</br>with Region-Based Semantic Control</h1>
 <h4>🔥🔥🔥 Now Supports Stable Diffusion 3 🔥🔥🔥</h4>
