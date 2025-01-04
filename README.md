@@ -116,7 +116,33 @@ for call in calls:
     generate_and_save_image(pipeline, **call)
 ```
 
+![couple_ZHONGLI_NINGGUANGgenshin_impact_highres_mas_seed_0](https://github.com/user-attachments/assets/d2353d35-0066-469e-8e4c-748aefa2b73c)
+
+![COUPLE_KAEDEHARA_KAZUHA_NINGGUANGgenshin_impact_hi_seed_0](https://github.com/user-attachments/assets/aa959b84-023c-49a2-8a45-a643bc899476)
+
+
+![COUPLE_KAEDEHARA_KAZUHA_scaramouchegenshin_impact__seed_0](https://github.com/user-attachments/assets/28d7f2de-c7b2-4267-9e8a-28f31bdbb238)
+
+
+![COUPLE_KAEDEHARA_KAZUHA_scaramouchegenshin_impact__seed_10](https://github.com/user-attachments/assets/b0d7c9fa-6ce3-413a-a1ce-fc5efcf6563e)
+
+
+![COUPLE_LYNEY_THOMAgenshin_impact_highres_masterpie_seed_10](https://github.com/user-attachments/assets/2a1a566f-694c-4943-9070-2ce4b5c5ace1)
+
+![TRIPLE_KAEDEHARA_KAZUHA_SCARAMOUCHE_ZHONGLIgenshin_seed_10](https://github.com/user-attachments/assets/071aa7c1-54e1-4d6d-94df-1d86ffc28607)
+
+
+![TRIPLE_KAEDEHARA_KAZUHA_NAHIDA_SCARAMOUCHEgenshin__seed_12](https://github.com/user-attachments/assets/361d6a62-3e06-47a8-94a5-86004d301f51)
+
+![In_a_Bar_TRIPLE_KAEDEHARA_KAZUHA_SCARAMOUCHE_ZHONG_seed_100](https://github.com/user-attachments/assets/4f42f25a-24b6-40f9-8a33-e78ff93eb1b7)
+
+
+![In_a_Swimming_Pool_TRIPLE_KAEDEHARA_KAZUHA_SCARAMO_seed_8](https://github.com/user-attachments/assets/36b0827d-d0bb-420a-ac2c-8a25d6bfa249)
+
+
+
 <div align="center">  
+
 
 <h1>StreamMultiDiffusion: Real-Time Interactive Generation</br>with Region-Based Semantic Control</h1>
 <h4>🔥🔥🔥 Now Supports Stable Diffusion 3 🔥🔥🔥</h4>
