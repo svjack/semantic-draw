@@ -264,8 +264,13 @@ However, we have decreased the latency **from an hour to a minute**, making the 
 ## 🤖 Installation
 
 ```bash
+sudo apt-get update && sudo apt-get install git-lfs ffmpeg cbm
+
 conda create -n smd python=3.10 && conda activate smd
-git clone https://github.com/ironjr/StreamMultiDiffusion
+pip install ipykernel
+python -m ipykernel install --user --name smd --display-name "smd"
+
+git clone https://github.com/svjack/StreamMultiDiffusion
 pip install -r requirements.txt
 ```
 
