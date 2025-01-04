@@ -270,7 +270,7 @@ conda create -n smd python=3.10 && conda activate smd
 pip install ipykernel
 python -m ipykernel install --user --name smd --display-name "smd"
 
-git clone https://github.com/svjack/StreamMultiDiffusion
+git clone https://github.com/svjack/semantic-draw && cd semantic-draw
 pip install -r requirements.txt
 ```
 
