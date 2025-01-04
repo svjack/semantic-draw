@@ -272,6 +272,7 @@ python -m ipykernel install --user --name smd --display-name "smd"
 
 git clone https://github.com/svjack/semantic-draw && cd semantic-draw
 pip install -r requirements.txt
+pip install -U torch torchvision
 ```
 
 ### For SD3 (🔥NEW!!!)
