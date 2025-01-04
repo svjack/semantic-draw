@@ -139,6 +139,226 @@ for call in calls:
 
 ![In_a_Swimming_Pool_TRIPLE_KAEDEHARA_KAZUHA_SCARAMO_seed_8](https://github.com/user-attachments/assets/36b0827d-d0bb-420a-ac2c-8a25d6bfa249)
 
+```python
+seed = 2
+device = 0
+
+import sys
+import time
+import warnings
+
+sys.path.append('../src')
+warnings.filterwarnings('ignore')
+
+import torch
+import torchvision.transforms as T
+from PIL import Image
+from diffusers.utils import make_image_grid
+from functools import reduce
+
+from util import seed_everything, blend
+from model import StableMultiDiffusionSDXLPipeline
+from ipython_util import dispt
+
+
+seed_everything(seed)
+device = f'cuda:{device}'
+print(f'[INFO] Initialized with seed  : {seed}')
+print(f'[INFO] Initialized with device: {device}')
+
+background_image = Image.open('../assets/timessquare/timessquare.jpeg')
+display(background_image)
+
+smd = StableMultiDiffusionSDXLPipeline(
+    device,
+    hf_key='cagliostrolab/animagine-xl-3.1',
+)
+
+# Prepare masks.
+print('[INFO] Loading masks...')
+
+name = 'timessquare'
+mask_all = Image.open(f'../assets/{name}/{name}_full.png').convert('RGBA').resize((1024, 1024))
+masks = [Image.open(f'../assets/{name}/{name}_{i}.png').convert('RGBA').resize((1024, 1024)) for i in range(1, 3)]
+masks = [(T.ToTensor()(mask)[-1:] > 0.5).float() for mask in masks]
+# Background mask is not explicitly specified in the inpainting mode.
+dispt(masks, row=1)
+
+masks = torch.stack(masks, dim=0)
+
+# Prepare prompts.
+print('[INFO] Loading prompts...')
+
+background_prompt = '1girl, 1boy, times square'
+background_prompt = '1boy, 1boy, times square'
+#background_prompt = ""
+
+prompts = [
+    # Foreground prompts.
+    '1boy, looking at viewer, brown hair, casual shirt',
+    '1girl, looking at viewer, pink hair, leather jacket',
+]
+
+prompts = [
+    # Foreground prompts.
+    'KAEDEHARA KAZUHA, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+    'SCARAMOUCHE, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+]
+
+negative_prompts = [
+    '1girl',
+    '1boy',
+]
+
+negative_prompts = [
+    '',
+    '',
+]
+
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+background_negative_prompt = negative_prompt_prefix
+
+print('Background Prompt: ' + background_prompt)
+print('Background Negative Prompt: ' + background_negative_prompt)
+for i, prompt in enumerate(prompts):
+    print(f'Prompt{i}: ' + prompt)
+for i, prompt in enumerate(negative_prompts):
+    print(f'Negative Prompt{i}: ' + prompt)
+
+height, width = masks.shape[-2:]
+
+tic = time.time()
+img = smd(
+    prompts,
+    negative_prompts,
+    masks=masks.float(),
+    guidance_scale=0,
+    # Use larger standard deviation to harmonize the inpainting result!
+    mask_stds=8.0,
+    mask_strengths=1,
+    height=height,
+    width=width,
+    bootstrap_steps=2,
+    #bootstrap_leak_sensitivity=0.1,
+    bootstrap_leak_sensitivity=0.2,
+    # This is for providing the image input.
+    background=background_image,
+    background_prompt=background_prompt,
+    background_negative_prompt=background_negative_prompt,
+)
+toc = time.time()
+print(f'Elapsed Time: {toc - tic}')
+display(img)
+```
+![inpainting_out (1)](https://github.com/user-attachments/assets/adf868e4-bc5f-4f0d-85fd-0953039ea4b8)
+
+
+```python
+seed = 1
+device = 0
+
+import sys
+import time
+import warnings
+
+sys.path.append('../src')
+warnings.filterwarnings('ignore')
+
+import torch
+import torchvision.transforms as T
+from PIL import Image
+from diffusers.utils import make_image_grid
+from functools import reduce
+
+from util import seed_everything, blend
+from model import StableMultiDiffusionSDXLPipeline
+from ipython_util import dispt
+from prompt_util import print_prompts, preprocess_prompts
+
+
+seed_everything(seed)
+device = f'cuda:{device}'
+print(f'[INFO] Initialized with seed  : {seed}')
+print(f'[INFO] Initialized with device: {device}')
+
+smd = StableMultiDiffusionSDXLPipeline(
+    device,
+    hf_key='cagliostrolab/animagine-xl-3.1',
+    has_i2t=False,
+)
+
+# Prepare masks.
+print('[INFO] Loading masks...')
+
+name = 'fantasy_large'
+mask_all = Image.open(f'../assets/{name}/{name}_full.png').convert('RGBA')
+masks = [Image.open(f'../assets/{name}/{name}_{i}.png').convert('RGBA') for i in range(1, 3)]
+masks = [(T.ToTensor()(mask)[-1:] > 0.5).float() for mask in masks]
+# Background is simply non-marked set of pixels.
+background = reduce(torch.logical_and, [m == 0 for m in masks])
+dispt([background] + masks, row=1)
+
+masks = torch.stack([background] + masks, dim=0)
+mask_strengths = 1.0
+mask_stds = 0.0
+
+###
+
+# Prepare prompts.
+print('[INFO] Loading prompts...')
+
+prompts = [
+    # Background prompt.
+    'purple sky, planets, planets, planets, stars, stars, stars',
+    # Foreground prompts.
+    'a photo of the dolomites, masterpiece, absurd quality, background, no humans',
+    #'1girl, looking at viewer, pretty face, blue hair, fantasy style, witch, magi, robe',
+    "KAEDEHARA KAZUHA, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer"
+]
+negative_prompts = [
+    '1girl, 1boy, humans, humans, humans',
+    '1girl, 1boy, humans, humans, humans',
+    '',
+]
+
+negative_prompts = [
+    '',
+    '',
+    '',
+]
+
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+###
+
+# Preprocess prompts for better results.
+quality_name = 'Standard v3.1'
+style_name = '(None)'
+
+prompts, negative_prompts = preprocess_prompts(
+    prompts, negative_prompts, style_name=style_name, quality_name=quality_name)
+
+###
+
+print_prompts(prompts, negative_prompts, has_background=True)
+height, width = masks.shape[-2:]
+
+tic = time.time()
+img = smd(
+    prompts, negative_prompts, masks=masks.float(),
+    mask_stds=mask_stds, mask_strengths=mask_strengths * 1,
+    height=height, width=width, bootstrap_steps=2,
+    bootstrap_leak_sensitivity=0.1,
+    guidance_scale=0,
+)
+toc = time.time()
+print(f'Elapsed Time: {toc - tic}')
+display(img)
+```
+
+![simple_out](https://github.com/user-attachments/assets/d5f29e45-462f-4b3b-b3d7-e174162b004b)
 
 
 <div align="center">  
