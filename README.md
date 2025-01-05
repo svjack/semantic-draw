@@ -514,6 +514,7 @@ def generate_image_with_background(
     quality_name='Standard v3.1',  # 质量名称
     seed=1,  # 随机种子
     device=0,  # 设备编号
+    num_inference_steps = 5,
 ):
     # 设置随机种子和设备
     if seed >= 0:
@@ -565,6 +566,7 @@ def generate_image_with_background(
         background=background_image,  # 传入背景图片
         background_prompt=background_prompt,  # 传入背景提示词
         background_negative_prompt=background_negative_prompt,  # 传入背景负面提示词
+        num_inference_steps = num_inference_steps
     )
     toc = time.time()
     print(f'Elapsed Time: {toc - tic}')
@@ -585,6 +587,7 @@ def generate_image_without_background(
     quality_name='Standard v3.1',  # 质量名称
     seed=1,  # 随机种子
     device=0,  # 设备编号
+    num_inference_steps = 5
 ):
     """
     生成没有背景的图像。
@@ -647,6 +650,7 @@ def generate_image_without_background(
         height=height, width=width, bootstrap_steps=bootstrap_steps,
         bootstrap_leak_sensitivity=bootstrap_leak_sensitivity,
         guidance_scale=guidance_scale,
+        num_inference_steps = num_inference_steps
     )
     toc = time.time()
     print(f'Elapsed Time: {toc - tic}')
