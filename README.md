@@ -1052,6 +1052,17 @@ img = generate_image_without_background(
 
 ![百岁珊——将军-st3](https://github.com/user-attachments/assets/a354bd5e-f567-4982-93aa-3e54a05d3d71)
 
+- Use Script
+```bash
+python draw_couple_action.py --output_dir "drink_water_couple_dir" --action "drink water"
+```
+
+
+![砂糖_重云_drink_water](https://github.com/user-attachments/assets/9f1004c9-3d64-4a9e-ac53-c5ba088aa2ce)
+
+
+![五郎_安柏_drink_water](https://github.com/user-attachments/assets/51e3b660-36b4-4c28-8ac1-ee59c0fbc61a)
+
 
 <div align="center">  
 
