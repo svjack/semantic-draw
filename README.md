@@ -836,7 +836,9 @@ img = generate_image_without_background(
 
 ![行重0](https://github.com/user-attachments/assets/a39b5222-1a30-4af6-9bd2-1adfdda41750)
 
-##### Make Mask Image from: https://huggingface.co/spaces/svjack/inpaint-mask-maker
+##### One Can Make Mask Image use Brush by: https://huggingface.co/spaces/svjack/inpaint-mask-maker
+##### Or Make Segmentation by https://huggingface.co/spaces/svjack/BRIA-RMBG-2.0 
+##### And Overlay Different Colored Mask by https://huggingface.co/spaces/svjack/Layer-Overlay-Tool
 ##### blue_yellow_green.webp blue.webp yellow.webp green.webp
 ```python
 # 准备 mask 路径
