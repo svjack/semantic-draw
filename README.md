@@ -140,6 +140,113 @@ for call in calls:
 ![In_a_Swimming_Pool_TRIPLE_KAEDEHARA_KAZUHA_SCARAMO_seed_8](https://github.com/user-attachments/assets/36b0827d-d0bb-420a-ac2c-8a25d6bfa249)
 
 ```python
+import os
+from tqdm import tqdm
+import pandas as pd
+from diffusers import StableDiffusionXLPipeline
+import torch
+
+# 定义函数生成 prompt
+#### 有 性别错位
+def gen_one_person_prompt(name, row):
+    return "SOLO ,{}, {} \(genshin impact\), masterpiece, {}".format(row["en_location"], name, row["en_action"])
+
+# 定义 name_dict
+new_dict = {
+    '砂糖': 'SUCROSE', '五郎': 'GOROU', '雷电将军': 'RAIDEN SHOGUN', '七七': 'QIQI', '重云': 'CHONGYUN',
+    '荒泷一斗': 'ARATAKI ITTO', '申鹤': 'SHENHE', '赛诺': 'CYNO', '绮良良': 'KIRARA', '优菈': 'EULA',
+    '魈': 'XIAO', '行秋': 'XINGQIU', '枫原万叶': 'KAEDEHARA KAZUHA', '凯亚': 'KAEYA', '凝光': 'NING GUANG',
+    '安柏': 'AMBER', '柯莱': 'COLLEI', '林尼': 'LYNEY', '胡桃': 'HU TAO', '甘雨': 'GANYU',
+    '神里绫华': 'KAMISATO AYAKA', '钟离': 'ZHONGLI', '纳西妲': 'NAHIDA', '云堇': 'YUN JIN',
+    '久岐忍': 'KUKI SHINOBU', '迪西娅': 'DEHYA', '珐露珊': 'FARUZAN', '公子 达达利亚': 'TARTAGLIA',
+    '琳妮特': 'LYNETTE', '罗莎莉亚': 'ROSARIA', '八重神子': 'YAE MIKO', '迪奥娜': 'DIONA',
+    '迪卢克': 'DILUC', '托马': 'THOMA', '神里绫人': 'KAMISATO AYATO', '鹿野院平藏': 'SHIKANOIN HEIZOU',
+    '阿贝多': 'ALBEDO', '琴': 'JEAN', '芭芭拉': 'BARBARA', '雷泽': 'RAZOR',
+    '珊瑚宫心海': 'SANGONOMIYA KOKOMI', '温迪': 'VENTI', '烟绯': 'YANFEI', '艾尔海森': 'ALHAITHAM',
+    '诺艾尔': 'NOELLE', '流浪者 散兵': 'SCARAMOUCHE', '班尼特': 'BENNETT', '芙宁娜': 'FURINA',
+    '夏洛蒂': 'CHARLOTTE', '宵宫': 'YOIMIYA', '妮露': 'NILOU', '瑶瑶': 'YAOYAO'
+}
+
+# 初始化 Stable Diffusion XL Pipeline
+pipeline = StableDiffusionXLPipeline.from_pretrained(
+    "cagliostrolab/animagine-xl-3.1",
+    torch_dtype=torch.float16
+).to("cuda")
+
+# 定义 negative prompt
+negative_prompt = "nsfw,lowres,(bad),text,error,fewer,extra,missing,worst quality,jpeg artifacts,low quality,watermark,unfinished,displeasing,oldest,early,chromatic aberration,signature,extra digits,artistic error,username,scan,[abstract],"
+
+# 假设 dating_df 是一个包含 en_location 和 en_action 列的 DataFrame
+# dating_df = pd.read_csv("your_dating_df.csv")  # 替换为你的 DataFrame 加载逻辑
+
+from datasets import load_dataset
+dating_df = load_dataset("svjack/dating-actions-en-zh")["train"].to_pandas()
+
+#### en_action
+dating_df["en_action"].drop_duplicates().map(lambda x: x.replace("your", "").replace("  ", " ")).values.tolist()
+
+#### en_location
+dating_df["en_location"].drop_duplicates().map(lambda x: x.replace("your", "").replace("  ", " ")).values.tolist()
+
+location_prepositions = {
+    'home': 'at',       # 通常用 "at home"
+    'kitchen': 'in',    # 通常用 "in the kitchen"
+    'park': 'in',       # 通常用 "in the park"
+    'garage': 'in',     # 通常用 "in the garage"
+    'cafe': 'at',       # 通常用 "at the cafe"
+    'restaurant': 'at', # 通常用 "at the restaurant"
+    'restroom': 'in',   # 通常用 "in the restroom"
+    'tea house': 'at',  # 通常用 "at the tea house"
+    'supermarket': 'at' # 通常用 "at the supermarket"
+}
+
+dating_df["en_action"] = dating_df["en_action"].map(lambda x: x.replace("your", "").replace("  ", " ")).values.tolist()
+dating_df["en_location"] = dating_df["en_location"].map(lambda x: x.replace("your", "").replace("  ", " ")).map(
+    lambda x: "{} {}".format(location_prepositions[x], x).strip()
+).values.tolist()
+
+
+# 定义 times 参数
+times = 3  # 指定 pipeline 执行的次数
+
+# 迭代 dating_df 的每一行
+for index, row in tqdm(dating_df.iterrows(), desc="Generating Images", total=len(dating_df)):
+    for name, value in new_dict.items():
+        # 生成 prompt
+        prompt = gen_one_person_prompt(value, row)
+
+        # 创建保存路径
+        output_dir = os.path.join("single_output_images", name)  # 路径尾部添加 single
+        os.makedirs(output_dir, exist_ok=True)
+
+        # 执行 pipeline 多次
+        for i in range(times):
+            # 设置随机种子（每次生成图像时 seed 不同）
+            seed = index + hash(name) + i  # 使用 index、name 和 i 作为 seed
+            generator = torch.manual_seed(seed)
+
+            # 生成图像
+            image = pipeline(
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                generator=generator,
+            ).images[0]
+
+            # 将 en_location 和 en_action 的值编入文件名
+            en_location_clean = row["en_location"].replace(" ", "_").replace("/", "_")  # 清理路径不兼容字符
+            en_action_clean = row["en_action"].replace(" ", "_").replace("/", "_")  # 清理路径不兼容字符
+            image_path = os.path.join(output_dir, f"{name}_{en_location_clean}_{en_action_clean}_{seed}.png")
+
+            # 保存图像
+            image.save(image_path)
+        #break
+    #break
+
+print("所有图像生成完成！")
+
+```
+
+```python
 seed = 2
 device = 0
 
