@@ -1063,6 +1063,15 @@ python draw_couple_action.py --output_dir "drink_water_couple_dir" --action "dri
 
 ![五郎_安柏_drink_water](https://github.com/user-attachments/assets/51e3b660-36b4-4c28-8ac1-ee59c0fbc61a)
 
+```bash
+python draw_couple_action.py --num_inference_steps 3 --background_prompt "warm indoor setting during winter" --output_dir "prepare_gift_couple_dir" --action "prepare a gift for the date" --random --num_combinations 3
+```
+
+![胡桃_阿贝多_prepare_a_gift_for_the_date](https://github.com/user-attachments/assets/505402a0-d6e0-40dc-b129-be416de128b4)
+
+
+![流浪者 散兵_妮露_prepare_a_gift_for_the_date](https://github.com/user-attachments/assets/c37bfa21-ca4b-4671-b2da-7a61fce737e7)
+
 
 <div align="center">  
 
