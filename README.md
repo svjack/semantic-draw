@@ -737,6 +737,105 @@ img = generate_image_without_background(
 
 ![枫叶0](https://github.com/user-attachments/assets/f90858c7-9b62-4665-8707-50998b23ab7d)
 
+```python
+# 准备 mask 路径
+mask_paths = [
+    f'assets/fantasy_large/fantasy_large_full.png',
+    f'assets/timessquare/timessquare_1.png',
+    f'assets/timessquare/timessquare_2.png'
+]
+
+# 准备 prompts
+prompts = [
+    # Background prompt.
+    #'purple sky, planets, planets, planets, stars, stars, stars',
+    'dimly lit bar, neon lights, glowing cocktails, wooden counter, bustling crowd, jazz music, cozy atmosphere, vintage decor, reflective surfaces, soft shadows',
+    # Foreground prompts.
+    "KAEDEHARA KAZUHA, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer",
+    'SCARAMOUCHE, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+]
+
+# 准备 negative prompts
+negative_prompts = [
+    '1girl, 1boy, humans, humans, humans',
+    '1girl, 1boy, humans, humans, humans',
+    '',
+]
+
+# 添加负面提示词前缀
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+# 调用函数
+img = generate_image_without_background(
+    smd=smd,
+    mask_paths=mask_paths,
+    prompts=prompts,
+    negative_prompts=negative_prompts,
+    mask_stds=0.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='Standard v3.1',  # 质量名称
+    seed=1,  # 随机种子
+    device=0  # 设备编号
+)
+```
+
+
+![枫散1](https://github.com/user-attachments/assets/487fd73a-e084-4694-9951-36ae46bcdcc6)
+
+```python
+# 准备 mask 路径
+mask_paths = [
+    f'assets/fantasy_large/fantasy_large_full.png',
+    f'assets/timessquare/timessquare_1.png',
+    f'assets/timessquare/timessquare_2.png'
+]
+
+# 准备 prompts
+prompts = [
+    # Background prompt.
+    #'purple sky, planets, planets, planets, stars, stars, stars',
+    'a fast food restaurant, brightly lit, with other customers and busy staff, a plate of fries and a soda on the table, relaxed and cheerful atmosphere',
+    # Foreground prompts.
+    "CHONGYUN, \(genshin impact\) highres, masterpiece, eating a hamburger, looking at viewer",
+    'XINGQIU, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+]
+
+# 准备 negative prompts
+negative_prompts = [
+    '',
+    '',
+    '',
+]
+
+# 添加负面提示词前缀
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+# 调用函数
+img = generate_image_without_background(
+    smd=smd,
+    mask_paths=mask_paths,
+    prompts=prompts,
+    negative_prompts=negative_prompts,
+    mask_stds=0.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='(None)',  # 质量名称
+    seed=2,  # 随机种子
+    device=0  # 设备编号
+)
+```
+
+![行重0](https://github.com/user-attachments/assets/a39b5222-1a30-4af6-9bd2-1adfdda41750)
+
 
 <div align="center">  
 
