@@ -1054,7 +1054,7 @@ img = generate_image_without_background(
 
 - Use Script
 ```bash
-python draw_couple_action.py --output_dir "drink_water_couple_dir" --action "drink water"
+python draw_couple_action.py --output_dir "drink_water_couple_dir" --action "drink water" --random --num_combinations=20
 ```
 
 
