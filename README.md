@@ -836,6 +836,61 @@ img = generate_image_without_background(
 
 ![行重0](https://github.com/user-attachments/assets/a39b5222-1a30-4af6-9bd2-1adfdda41750)
 
+##### Make Mask Image from: https://huggingface.co/spaces/svjack/inpaint-mask-maker
+##### blue_yellow_green.webp blue.webp yellow.webp green.webp
+```python
+# 准备 mask 路径
+mask_paths = [
+    f'blue_yellow_green.webp',
+    f'blue.webp',
+    f'yellow.webp',
+    f'green.webp',
+]
+
+# 准备 prompts
+prompts = [
+    # Background prompt.
+    #'purple sky, planets, planets, planets, stars, stars, stars',
+    #'a fast food restaurant, brightly lit, with other customers and busy staff, a plate of fries and a soda on the table, relaxed and cheerful atmosphere',
+    "dimly lit bar, neon lights",
+    # Foreground prompts.
+    'solo, SCARAMOUCHE, \(genshin impact\) highres, masterpiece, drink beverages through a straw, laugthing',
+    "mirror without people",
+    'solo ,XINGQIU, \(genshin impact\) highres, masterpiece, drink beverages through a straw, laugthing',
+]
+
+# 准备 negative prompts
+negative_prompts = [
+    '',
+    'Multiple People',
+    '',
+    'Multiple People',
+]
+
+# 添加负面提示词前缀
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+# 调用函数
+img = generate_image_without_background(
+    smd=smd,
+    mask_paths=mask_paths,
+    prompts=prompts,
+    negative_prompts=negative_prompts,
+    mask_stds=0.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='(None)',  # 质量名称
+    seed=0,  # 随机种子
+    device=0  # 设备编号
+)
+```
+
+![two_people_with_mirror](https://github.com/user-attachments/assets/0bbbd6c9-9473-450e-b747-2e41a9546fb9)
+
 
 <div align="center">  
 
