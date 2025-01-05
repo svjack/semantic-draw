@@ -1000,6 +1000,58 @@ img = generate_image_without_background(
 
 ![百岁珊——将军](https://github.com/user-attachments/assets/05304beb-e546-436d-a22b-9440c1bebff3)
 
+```python
+# 准备 mask 路径
+mask_paths = [
+    f'blue_yellow_m.webp',
+    f'blue_left_m.webp',
+    f'yellow_right_m.webp',
+]
+
+# 准备 prompts
+prompts = [
+    # Background prompt.
+    #'purple sky, planets, planets, planets, stars, stars, stars',
+    #'a fast food restaurant, brightly lit, with other customers and busy staff, a plate of fries and a soda on the table, relaxed and cheerful atmosphere',
+    "dimly lit bar, neon lights",
+    # Foreground prompts.
+    'solo, FARUZAN, \(genshin impact\) highres, masterpiece, drink water',
+    'solo ,RAIDEN SHOGUN, \(genshin impact\) highres, masterpiece, drink water',
+]
+
+# 准备 negative prompts
+negative_prompts = [
+    '',
+    '',
+    '',
+    #'Multiple People',
+]
+
+# 添加负面提示词前缀
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+# 调用函数
+img = generate_image_without_background(
+    smd=smd,
+    mask_paths=mask_paths,
+    prompts=prompts,
+    negative_prompts=negative_prompts,
+    mask_stds=2.0,  # mask 标准差
+    mask_strengths=3.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='(None)',  # 质量名称
+    seed=0,  # 随机种子
+    device=0,  # 设备编号
+    num_inference_steps=3,
+)
+```
+
+![百岁珊——将军-st3](https://github.com/user-attachments/assets/a354bd5e-f567-4982-93aa-3e54a05d3d71)
+
 
 <div align="center">  
 
