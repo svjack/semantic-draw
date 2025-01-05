@@ -467,6 +467,276 @@ display(img)
 
 ![simple_out](https://github.com/user-attachments/assets/d5f29e45-462f-4b3b-b3d7-e174162b004b)
 
+```python
+# 依赖放在函数外部
+import sys
+import time
+import warnings
+
+sys.path.append('src')
+warnings.filterwarnings('ignore')
+
+import torch
+import torchvision.transforms as T
+from PIL import Image
+from diffusers.utils import make_image_grid
+from functools import reduce
+
+from util import seed_everything, blend
+from model import StableMultiDiffusionSDXLPipeline
+from ipython_util import dispt
+from prompt_util import print_prompts, preprocess_prompts
+
+# 初始化 smd（只执行一次）
+seed = 1  # 默认 seed
+device = 0  # 默认 device
+device = f'cuda:{device}'
+smd = StableMultiDiffusionSDXLPipeline(
+    device,
+    hf_key='cagliostrolab/animagine-xl-3.1',
+    has_i2t=False,
+)
+
+def generate_image_with_background(
+    smd,  # 从外部传入已经初始化的 smd
+    background_image_path,  # 背景图片路径
+    mask_paths,  # mask 路径列表
+    prompts,  # 提示词列表（仅前景提示词）
+    negative_prompts,  # 负面提示词列表（仅前景负面提示词）
+    background_prompt,  # 背景提示词
+    background_negative_prompt=None,  # 背景负面提示词（可选）
+    mask_stds=8.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.2,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='Standard v3.1',  # 质量名称
+    seed=1,  # 随机种子
+    device=0,  # 设备编号
+):
+    # 设置随机种子和设备
+    if seed >= 0:
+        seed_everything(seed)
+    device = f'cuda:{device}'
+    print(f'[INFO] Initialized with seed  : {seed}')
+    print(f'[INFO] Initialized with device: {device}')
+
+    # 加载背景图片
+    background_image = Image.open(background_image_path)
+    display(background_image)
+
+    # 加载 masks
+    print('[INFO] Loading masks...')
+    masks = [Image.open(path).convert('RGBA').resize((1024, 1024)) for path in mask_paths]
+    masks = [(T.ToTensor()(mask)[-1:] > 0.5).float() for mask in masks]
+    masks = torch.stack(masks, dim=0)  # 不包含背景 mask
+    dispt(masks, row=1)
+
+    # 处理 prompts
+    print('[INFO] Loading prompts...')
+    if background_negative_prompt is None:
+        background_negative_prompt = 'worst quality, bad quality, normal quality, cropped, framed'
+
+    negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+    negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+    # 预处理 prompts
+    prompts, negative_prompts = preprocess_prompts(
+        prompts, negative_prompts, style_name=style_name, quality_name=quality_name)
+
+    print('Background Prompt: ' + background_prompt)
+    print('Background Negative Prompt: ' + background_negative_prompt)
+    for i, prompt in enumerate(prompts):
+        print(f'Prompt{i}: ' + prompt)
+    for i, prompt in enumerate(negative_prompts):
+        print(f'Negative Prompt{i}: ' + prompt)
+
+    height, width = masks.shape[-2:]
+
+    # 生成图像
+    tic = time.time()
+    img = smd(
+        prompts, negative_prompts, masks=masks.float(),
+        mask_stds=mask_stds, mask_strengths=mask_strengths,
+        height=height, width=width, bootstrap_steps=bootstrap_steps,
+        bootstrap_leak_sensitivity=bootstrap_leak_sensitivity,
+        guidance_scale=guidance_scale,
+        background=background_image,  # 传入背景图片
+        background_prompt=background_prompt,  # 传入背景提示词
+        background_negative_prompt=background_negative_prompt,  # 传入背景负面提示词
+    )
+    toc = time.time()
+    print(f'Elapsed Time: {toc - tic}')
+    display(img)
+    return img
+
+def generate_image_without_background(
+    smd,  # 从外部传入已经初始化的 smd
+    mask_paths,  # mask 路径列表（不包含背景 mask）
+    prompts,  # 提示词列表（包含背景提示词和前景提示词）
+    negative_prompts,  # 负面提示词列表（包含背景负面提示词和前景负面提示词）
+    mask_stds=0.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='Standard v3.1',  # 质量名称
+    seed=1,  # 随机种子
+    device=0,  # 设备编号
+):
+    """
+    生成没有背景的图像。
+
+    参数:
+        smd: 已经初始化的 StableMultiDiffusionSDXLPipeline 实例。
+        mask_paths: mask 路径列表（不包含背景 mask）。
+        prompts: 提示词列表（包含背景提示词和前景提示词）。
+        negative_prompts: 负面提示词列表（包含背景负面提示词和前景负面提示词）。
+        mask_stds: mask 的标准差，控制 mask 的模糊程度。
+        mask_strengths: mask 的强度，控制前景与背景的融合程度。
+        bootstrap_steps: 引导步数，控制生成过程中的迭代次数。
+        bootstrap_leak_sensitivity: 引导泄漏敏感度，控制前景与背景的泄漏程度。
+        guidance_scale: 引导比例，控制生成图像的风格强度。
+        style_name: 风格名称，用于提示词预处理。
+        quality_name: 质量名称，用于提示词预处理。
+        seed: 随机种子，控制生成过程的随机性。
+        device: 设备编号，指定使用的 GPU 设备。
+
+    返回:
+        生成的图像。
+    """
+    # 设置随机种子和设备
+    if seed >= 0:
+        seed_everything(seed)
+    device = f'cuda:{device}'
+    print(f'[INFO] Initialized with seed  : {seed}')
+    print(f'[INFO] Initialized with device: {device}')
+
+    # 加载 masks
+    print('[INFO] Loading masks...')
+    masks = [Image.open(path).convert('RGBA').resize((1024, 1024)) for path in mask_paths]
+    masks = [(T.ToTensor()(mask)[-1:] > 0.5).float() for mask in masks]
+    masks = torch.stack(masks, dim=0)  # 不包含背景 mask
+    dispt(masks, row=1)
+
+    # 处理 prompts
+    print('[INFO] Loading prompts...')
+    negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+    negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+    # 预处理 prompts
+    prompts, negative_prompts = preprocess_prompts(
+        prompts, negative_prompts, style_name=style_name, quality_name=quality_name)
+
+    print('Background Prompt: ' + prompts[0])
+    print('Background Negative Prompt: ' + negative_prompts[0])
+    for i, prompt in enumerate(prompts[1:]):
+        print(f'Foreground Prompt{i}: ' + prompt)
+    for i, prompt in enumerate(negative_prompts[1:]):
+        print(f'Foreground Negative Prompt{i}: ' + prompt)
+
+    height, width = masks.shape[-2:]
+
+    # 生成图像
+    tic = time.time()
+    img = smd(
+        prompts, negative_prompts, masks=masks.float(),
+        mask_stds=mask_stds, mask_strengths=mask_strengths,
+        height=height, width=width, bootstrap_steps=bootstrap_steps,
+        bootstrap_leak_sensitivity=bootstrap_leak_sensitivity,
+        guidance_scale=guidance_scale,
+    )
+    toc = time.time()
+    print(f'Elapsed Time: {toc - tic}')
+    display(img)
+    return img
+```
+
+```python
+# 调用第一个函数
+img = generate_image_with_background(
+    smd=smd,
+    background_image_path='assets/timessquare/timessquare.jpeg',
+    mask_paths=[
+        f'assets/timessquare/timessquare_1.png',
+        f'assets/timessquare/timessquare_2.png'
+    ],
+    prompts=[
+    # Foreground prompts.
+    'KAEDEHARA KAZUHA, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+    'SCARAMOUCHE, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer',
+    ],
+    negative_prompts=[
+        '',
+        '',
+    ],
+    background_prompt='1boy, 1boy, times square',
+    background_negative_prompt='worst quality, bad quality, normal quality, cropped, framed',
+    mask_stds=8.0,
+    mask_strengths=1.0,
+    bootstrap_steps=2,
+    bootstrap_leak_sensitivity=0.2,
+    guidance_scale=0,
+    seed = 0
+)
+```
+
+![枫散0](https://github.com/user-attachments/assets/9f41cf4c-514e-4cbb-94db-83fae8ea393b)
+
+
+```python
+# 假设 smd 已经初始化
+name = 'fantasy_large'
+
+# 准备 mask 路径
+mask_paths = [
+    f'assets/{name}/{name}_full.png',
+    f'assets/{name}/{name}_1.png',
+    f'assets/{name}/{name}_2.png'
+]
+
+# 准备 prompts
+prompts = [
+    # Background prompt.
+    'purple sky, planets, planets, planets, stars, stars, stars',
+    # Foreground prompts.
+    'a photo of the dolomites, masterpiece, absurd quality, background, no humans',
+    "KAEDEHARA KAZUHA, \(genshin impact\) highres, masterpiece, drink beverages through a straw, looking at viewer"
+]
+
+# 准备 negative prompts
+negative_prompts = [
+    '1girl, 1boy, humans, humans, humans',
+    '1girl, 1boy, humans, humans, humans',
+    '',
+]
+
+# 添加负面提示词前缀
+negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+# 调用函数
+img = generate_image_without_background(
+    smd=smd,
+    mask_paths=mask_paths,
+    prompts=prompts,
+    negative_prompts=negative_prompts,
+    mask_stds=0.0,  # mask 标准差
+    mask_strengths=1.0,  # mask 强度
+    bootstrap_steps=2,  # 引导步数
+    bootstrap_leak_sensitivity=0.1,  # 引导泄漏敏感度
+    guidance_scale=0,  # 引导比例
+    style_name='(None)',  # 风格名称
+    quality_name='Standard v3.1',  # 质量名称
+    seed=1,  # 随机种子
+    device=0  # 设备编号
+)
+```
+
+![枫叶0](https://github.com/user-attachments/assets/f90858c7-9b62-4665-8707-50998b23ab7d)
+
 
 <div align="center">  
 
