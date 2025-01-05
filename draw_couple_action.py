@@ -9,6 +9,7 @@ import torchvision.transforms as T
 from PIL import Image
 from diffusers.utils import make_image_grid
 from functools import reduce
+import random
 
 # 添加项目路径
 sys.path.append('src')
@@ -35,25 +36,6 @@ new_dict = {
     '诺艾尔': 'NOELLE', '流浪者 散兵': 'SCARAMOUCHE', '班尼特': 'BENNETT', '芙宁娜': 'FURINA',
     '夏洛蒂': 'CHARLOTTE', '宵宫': 'YOIMIYA', '妮露': 'NILOU', '瑶瑶': 'YAOYAO'
 }
-
-# 准备 mask 路径
-mask_paths = [
-    f'blue_yellow_m.webp',
-    f'blue_left_m.webp',
-    f'yellow_right_m.webp',
-]
-
-# 准备 negative prompts
-negative_prompts = [
-    '',
-    '',
-    '',
-    #'Multiple People',
-]
-
-# 添加负面提示词前缀
-negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
-negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
 
 # 定义 generate_image_without_background 函数
 def generate_image_without_background(
@@ -110,8 +92,8 @@ def generate_image_without_background(
 
     # 处理 prompts
     print('[INFO] Loading prompts...')
-    negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
-    negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+    #negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+    #negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
 
     # 预处理 prompts
     prompts, negative_prompts = preprocess_prompts(
@@ -157,11 +139,38 @@ def main(args):
     # 将 action 转换为文件名友好的格式（替换空格为下划线）
     action_safe = args.action.replace(" ", "_")
 
-    # 遍历 new_dict 中的所有角色组合
-    for name1, name2 in tqdm([(k1, k2) for k1 in new_dict.keys() for k2 in new_dict.keys() if k1 != k2], desc="Generating images"):
+    # 获取所有角色名
+    characters = list(new_dict.keys())
+
+    # 如果启用随机组合
+    if args.random:
+        # 随机生成组合
+        random_combinations = []
+        for _ in range(args.num_combinations):  # 生成指定数量的随机组合
+            name1, name2 = random.sample(characters, 2)  # 随机选择两个不同的角色
+            random_combinations.append((name1, name2))
+        combinations = random_combinations
+    else:
+        # 生成所有可能的组合
+        combinations = [(k1, k2) for k1 in characters for k2 in characters if k1 != k2]
+
+    # 定义 negative_prompts
+    negative_prompts = [
+        '',
+        '',
+        '',
+        #'Multiple People',
+    ]
+
+    # 添加负面提示词前缀
+    negative_prompt_prefix = 'worst quality, bad quality, normal quality, cropped, framed'
+    negative_prompts = [negative_prompt_prefix + ', ' + p for p in negative_prompts]
+
+    # 遍历组合
+    for name1, name2 in tqdm(combinations, desc="Generating images"):
         # 替换 prompts 中的角色和动作
         prompts = [
-            "dimly lit bar, neon lights",
+            args.background_prompt,  # 使用命令行参数中的背景提示词
             f'solo, {new_dict[name1]}, \(genshin impact\) highres, masterpiece, {args.action}',
             f'solo, {new_dict[name2]}, \(genshin impact\) highres, masterpiece, {args.action}',
         ]
@@ -169,7 +178,7 @@ def main(args):
         # 生成图片
         img = generate_image_without_background(
             smd=smd,
-            mask_paths=mask_paths,
+            mask_paths=args.mask_paths,  # 使用命令行参数中的 mask 路径
             prompts=prompts,
             negative_prompts=negative_prompts,
             mask_stds=args.mask_stds,  # mask 标准差
@@ -205,6 +214,10 @@ if __name__ == "__main__":
     parser.add_argument('--quality_name', type=str, default='(None)', help='Quality name for prompts.')
     parser.add_argument('--num_inference_steps', type=int, default=3, help='Number of inference steps.')
     parser.add_argument('--action', type=str, default='drink water', help='Action to be performed by characters.')
+    parser.add_argument('--random', action='store_true', help='Enable random combinations.')
+    parser.add_argument('--num_combinations', type=int, default=10, help='Number of random combinations to generate.')
+    parser.add_argument('--background_prompt', type=str, default='dimly lit bar, neon lights', help='Background prompt for the image.')
+    parser.add_argument('--mask_paths', type=str, nargs=3, default=['blue_yellow_m.webp', 'blue_left_m.webp', 'yellow_right_m.webp'], help='Paths to the mask images.')
     args = parser.parse_args()
 
     # 运行主函数
