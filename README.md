@@ -247,6 +247,33 @@ print("所有图像生成完成！")
 ```
 
 ```python
+#### pip install -U hf_transfer
+import os
+
+# 如果需要设置自定义的 Hugging Face 端点（例如本地服务器），可以取消注释以下行
+# os.environ["HF_ENDPOINT"] = "http://localhost:5564"
+
+# 启用 HF 传输加速（可选）
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
+
+from huggingface_hub import HfApi, logging
+
+# 设置日志级别为调试模式
+logging.set_verbosity_debug()
+
+# 初始化 HfApi
+hf = HfApi()
+
+# 上传文件
+hf.upload_file(
+    path_or_fileobj="原神单人图片1.zip",  # 本地文件路径
+    path_in_repo="原神单人图片1.zip",    # 文件在仓库中的路径（这里直接放在根目录）
+    repo_id="svjack/Genshin-Impact-Novel-Video",  # 目标仓库 ID
+    repo_type="dataset"  # 仓库类型（模型仓库）
+)
+```
+
+```python
 seed = 2
 device = 0
 
