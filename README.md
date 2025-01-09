@@ -139,6 +139,7 @@ for call in calls:
 
 ![In_a_Swimming_Pool_TRIPLE_KAEDEHARA_KAZUHA_SCARAMO_seed_8](https://github.com/user-attachments/assets/36b0827d-d0bb-420a-ac2c-8a25d6bfa249)
 
+- Simgle Image
 ```python
 import os
 from tqdm import tqdm
@@ -244,6 +245,12 @@ for index, row in tqdm(dating_df.iterrows(), desc="Generating Images", total=len
 
 print("所有图像生成完成！")
 
+```
+
+- COUPLE TRIPLE Image
+
+```bash
+python couple_triple_script.py --output_dir c5t7_dir --num_couple 5 --num_triple 7
 ```
 
 ```python
