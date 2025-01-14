@@ -280,6 +280,227 @@ hf.upload_file(
 )
 ```
 
+- Couple Image validation
+```python
+#!/usr/bin/env python
+# coding: utf-8
+
+from datasets import load_dataset
+import json
+import pandas as pd
+from tqdm import tqdm  # 导入 tqdm 用于显示进度条
+
+# 1. 加载数据集
+ds = load_dataset("svjack/Genshin-Impact-Style-Blended-Couple-with-Tags")
+
+# 2. 转换为 Pandas DataFrame，并移除不需要的列
+df = ds["train"].remove_columns(["image"]).to_pandas()
+
+# 3. 处理 tag_json 列
+df["tag_json"] = df["tag_json"].map(json.loads).map(lambda d: 
+                                   dict(map(lambda t2: (t2[0], json.loads(t2[1])), d.items()))
+                                  )
+
+# 4. 定义映射字典
+new_dict = {
+    '砂糖': 'SUCROSE', '五郎': 'GOROU', '雷电将军': 'RAIDEN SHOGUN', '七七': 'QIQI', '重云': 'CHONGYUN',
+    '荒泷一斗': 'ARATAKI ITTO', '申鹤': 'SHENHE', '赛诺': 'CYNO', '绮良良': 'KIRARA', '优菈': 'EULA',
+    '魈': 'XIAO', '行秋': 'XINGQIU', '枫原万叶': 'KAEDEHARA KAZUHA', '凯亚': 'KAEYA', '凝光': 'NING GUANG',
+    '安柏': 'AMBER', '柯莱': 'COLLEI', '林尼': 'LYNEY', '胡桃': 'HU TAO', '甘雨': 'GANYU',
+    '神里绫华': 'KAMISATO AYAKA', '钟离': 'ZHONGLI', '纳西妲': 'NAHIDA', '云堇': 'YUN JIN',
+    '久岐忍': 'KUKI SHINOBU', '迪西娅': 'DEHYA', '珐露珊': 'FARUZAN', '公子 达达利亚': 'TARTAGLIA',
+    '琳妮特': 'LYNETTE', '罗莎莉亚': 'ROSARIA', '八重神子': 'YAE MIKO', '迪奥娜': 'DIONA',
+    '迪卢克': 'DILUC', '托马': 'THOMA', '神里绫人': 'KAMISATO AYATO', '鹿野院平藏': 'SHIKANOIN HEIZOU',
+    '阿贝多': 'ALBEDO', '琴': 'JEAN', '芭芭拉': 'BARBARA', '雷泽': 'RAZOR',
+    '珊瑚宫心海': 'SANGONOMIYA KOKOMI', '温迪': 'VENTI', '烟绯': 'YANFEI', '艾尔海森': 'ALHAITHAM',
+    '诺艾尔': 'NOELLE', '流浪者 散兵': 'SCARAMOUCHE', '班尼特': 'BENNETT', '芙宁娜': 'FURINA',
+    '夏洛蒂': 'CHARLOTTE', '宵宫': 'YOIMIYA', '妮露': 'NILOU', '瑶瑶': 'YAOYAO'
+}
+rev_dict = dict(map(lambda t2: (t2[1].replace(" ", "_"), t2[0]), new_dict.items()))
+
+mapping_dict = {
+    "diona": "迪奥娜",
+    "clorinde": "克洛琳德",
+    "noelle": "诺艾尔",
+    "kuki_shinobu": "久岐忍",
+    "shikanoin_heizou": "鹿野院平藏",
+    "rosaria": "罗莎莉亚",
+    "collei": "柯莱",
+    "arlecchino": "阿蕾奇诺",
+    "kujou_sara": "九条裟罗",
+    "nilou": "妮露",
+    "kirara": "绮良良",
+    "ningguang": "凝光",
+    "xiao": "魈",
+    "beidou": "北斗",
+    "xiangling": "香菱",
+    "sayu": "早柚",
+    "kaeya": "凯亚",
+    "ganyu": "甘雨",
+    "arataki_itto": "荒泷一斗",
+    "kaedehara_kazuha": "枫原万叶",
+    "lisa": "丽莎",
+    "sangonomiya_kokomi": "珊瑚宫心海",
+    "jean": "琴",
+    "yelan": "夜兰",
+    "neuvillette": "那维莱特",
+    "razor": "雷泽",
+    "klee": "可莉",
+    "lynette": "琳妮特",
+    "wanderer": "流浪者",
+    "kaveh": "卡维",
+    "lyney": "林尼",
+    "alhaitham": "艾尔海森",
+    "layla": "莱依拉",
+    "fischl": "菲谢尔",
+    "gorou": "五郎",
+    "kamisato_ayaka": "神里绫华",
+    "barbara": "芭芭拉",
+    "hu_tao": "胡桃",
+    "raiden_shogun": "雷电将军",
+    "qiqi": "七七",
+    "venti": "温迪",
+    "yae_miko": "八重神子",
+    "nahida": "纳西妲",
+    "sucrose": "砂糖",
+    "shenhe": "申鹤",
+    "xingqiu": "行秋",
+    "xianyun": "闲云",
+    "yun_jin": "云堇",
+    "navia": "娜维娅",
+    "mona": "莫娜",
+    "thoma": "托马",
+    "yoimiya": "宵宫",
+    "wriothesley": "莱欧斯利",
+    "faruzan": "珐露珊",
+    "kamisato_ayato": "神里绫人",
+    "tartaglia": "达达利亚",
+    "dehya": "迪希雅",
+    "albedo": "阿贝多",
+    "keqing": "刻晴",
+    "eula": "优菈",
+    "cyno": "赛诺",
+    "amber": "安柏",
+    "tighnari": "提纳里",
+    "diluc": "迪卢克",
+    "zhongli": "钟离",
+    "yanfei": "烟绯",
+    "furina": "芙宁娜",
+    "chongyun": "重云"
+}
+
+def replace_characters_with_chinese_names(tag_json_dict, mapping_dict):
+    # 存储成对结果的列表
+    paired_results = []
+
+    # 遍历字典中的每个键值对
+    for key, value in tag_json_dict.items():
+        # 提取 results 中 prediction 为 "Same" 的部分
+        same_results = [result for result in value.get("results", []) if result.get("prediction") == "Same"]
+        # 提取 characters 部分
+        characters = value.get("characters", {})
+        # 提取 features 中的 1boy 和 1girl 字段
+        features = value.get("features", {})
+        is_boy = features.get("1boy", 0) > 0.5  # 假设大于 0.5 表示存在
+        is_girl = features.get("1girl", 0) > 0.5  # 假设大于 0.5 表示存在
+
+        # 确定性别标签
+        gender_label = []
+        if is_boy:
+            gender_label.append("boy")
+        if is_girl:
+            gender_label.append("girl")
+        if not gender_label:
+            gender_label.append("unknown")  # 如果没有明确的性别标签，标记为 unknown
+
+        # 替换 characters 中的英文标签为中文名称
+        chinese_characters = {}
+        for tag, score in characters.items():
+            # 将 tag 转换为小写并去掉括号部分（如果有）
+            tag_normalized = tag.lower().split("_(")[0]
+            # 查找映射字典中的中文名称
+            chinese_name = mapping_dict.get(tag_normalized, tag)  # 如果找不到映射，保留原标签
+            chinese_characters[chinese_name] = score
+
+        # 如果 same_results 或 characters 不为空，则添加到结果中
+        if same_results or chinese_characters:
+            paired_results.append({
+                "same_results": same_results,
+                "characters": chinese_characters,
+                "gender_label": gender_label
+            })
+
+    return paired_results
+
+# 5. 定义 extract_and_check_characters 函数
+def extract_and_check_characters(d, rev_dict, mapping_dict):
+    # 提取 im_name 中的人物
+    im_name_characters = list(filter(lambda t2: t2[0] in d["im_name"], rev_dict.items()))
+    im_name_characters = [t2[1] for t2 in im_name_characters]  # 提取中文名称
+
+    # 提取 tag_json 中的人物
+    paired_results = replace_characters_with_chinese_names(d["tag_json"], mapping_dict)
+
+    # 检查 im_name 中的人物是否在 tag_json 中
+    matched_results = []
+    for character in im_name_characters:
+        found_in_same_results = False
+        found_in_characters = False
+
+        # 检查 same_results
+        for pair in paired_results:
+            if character in [result["name"] for result in pair["same_results"]]:
+                found_in_same_results = True
+                break
+
+        # 检查 characters
+        for pair in paired_results:
+            if character in pair["characters"]:
+                found_in_characters = True
+                break
+
+        # 记录匹配结果
+        matched_results.append({
+            "character": character,
+            "found_in_same_results": found_in_same_results,
+            "found_in_characters": found_in_characters
+        })
+
+    return {
+        "im_name_characters": im_name_characters,
+        "tag_json_characters": paired_results,
+        "matched_results": matched_results
+    }
+
+# 6. 遍历 DataFrame 的每一行，调用 extract_and_check_characters 函数
+results = []  # 用于存储所有行的结果
+
+# 使用 tqdm 显示进度条
+for index, row in tqdm(df.iterrows(), total=len(df), desc="Processing rows"):
+    d = row.to_dict()
+    result = extract_and_check_characters(d, rev_dict, mapping_dict)
+    
+    # 将 result 的结果存储到 d 中
+    d.update(result)
+    
+    # 将更新后的 d 添加到 results 列表中
+    results.append(d)
+
+# 将 results 转换为 DataFrame
+results_df = pd.DataFrame(results)
+
+# 7. 保存结果到 CSV 文件
+results_df.to_csv("results_with_matched_characters.csv", index=False, encoding="utf-8-sig")
+
+print("处理完成，结果已保存到 results_with_matched_characters.csv")
+
+idx = 2
+results_df["matched_results"].iloc[idx]
+
+ds["train"][idx]["image"].resize((512, 512))
+```
+
+
 ```python
 seed = 2
 device = 0
