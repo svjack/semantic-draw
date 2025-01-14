@@ -504,7 +504,7 @@ l = results_df[
 ].index.values.tolist()
 len(l)
 
-
+ds["train"].select(l).push_to_hub("svjack/Genshin-Impact-Couple-with-Tags")
 ```
 
 
