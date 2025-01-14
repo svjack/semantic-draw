@@ -498,6 +498,13 @@ idx = 2
 results_df["matched_results"].iloc[idx]
 
 ds["train"][idx]["image"].resize((512, 512))
+
+l = results_df[
+    results_df["matched_results"].map(lambda x: "False" not in str(x))
+].index.values.tolist()
+len(l)
+
+
 ```
 
 
