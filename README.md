@@ -945,6 +945,223 @@ len(l), results_df.shape
 ds["train"].select(l).push_to_hub("svjack/Genshin-Impact-Portrait-with-Tags-Filtered")
 ```
 
+- Single Image Gender Validation
+```python
+from datasets import load_dataset
+import json
+import pandas as pd
+from tqdm import tqdm  # 导入 tqdm 用于显示进度条
+
+# 1. 加载数据集
+ds = load_dataset("svjack/Genshin-Impact-Portrait-with-Tags-Filtered")
+
+# 2. 转换为 Pandas DataFrame，并移除不需要的列
+df = ds["train"].remove_columns(["image"]).to_pandas()
+
+df["tag_json"] = df["tag_json"].map(json.loads)
+
+# 4. 定义映射字典
+new_dict = {
+    '砂糖': 'SUCROSE', '五郎': 'GOROU', '雷电将军': 'RAIDEN SHOGUN', '七七': 'QIQI', '重云': 'CHONGYUN',
+    '荒泷一斗': 'ARATAKI ITTO', '申鹤': 'SHENHE', '赛诺': 'CYNO', '绮良良': 'KIRARA', '优菈': 'EULA',
+    '魈': 'XIAO', '行秋': 'XINGQIU', '枫原万叶': 'KAEDEHARA KAZUHA', '凯亚': 'KAEYA', '凝光': 'NING GUANG',
+    '安柏': 'AMBER', '柯莱': 'COLLEI', '林尼': 'LYNEY', '胡桃': 'HU TAO', '甘雨': 'GANYU',
+    '神里绫华': 'KAMISATO AYAKA', '钟离': 'ZHONGLI', '纳西妲': 'NAHIDA', '云堇': 'YUN JIN',
+    '久岐忍': 'KUKI SHINOBU', '迪西娅': 'DEHYA', '珐露珊': 'FARUZAN', '公子 达达利亚': 'TARTAGLIA',
+    '琳妮特': 'LYNETTE', '罗莎莉亚': 'ROSARIA', '八重神子': 'YAE MIKO', '迪奥娜': 'DIONA',
+    '迪卢克': 'DILUC', '托马': 'THOMA', '神里绫人': 'KAMISATO AYATO', '鹿野院平藏': 'SHIKANOIN HEIZOU',
+    '阿贝多': 'ALBEDO', '琴': 'JEAN', '芭芭拉': 'BARBARA', '雷泽': 'RAZOR',
+    '珊瑚宫心海': 'SANGONOMIYA KOKOMI', '温迪': 'VENTI', '烟绯': 'YANFEI', '艾尔海森': 'ALHAITHAM',
+    '诺艾尔': 'NOELLE', '流浪者 散兵': 'SCARAMOUCHE', '班尼特': 'BENNETT', '芙宁娜': 'FURINA',
+    '夏洛蒂': 'CHARLOTTE', '宵宫': 'YOIMIYA', '妮露': 'NILOU', '瑶瑶': 'YAOYAO'
+}
+rev_dict = dict(map(lambda t2: (t2[1].replace(" ", "_"), t2[0]), new_dict.items()))
+
+mapping_dict = {
+    "diona": "迪奥娜",
+    "clorinde": "克洛琳德",
+    "noelle": "诺艾尔",
+    "kuki_shinobu": "久岐忍",
+    "shikanoin_heizou": "鹿野院平藏",
+    "rosaria": "罗莎莉亚",
+    "collei": "柯莱",
+    "arlecchino": "阿蕾奇诺",
+    "kujou_sara": "九条裟罗",
+    "nilou": "妮露",
+    "kirara": "绮良良",
+    "ningguang": "凝光",
+    "xiao": "魈",
+    "beidou": "北斗",
+    "xiangling": "香菱",
+    "sayu": "早柚",
+    "kaeya": "凯亚",
+    "ganyu": "甘雨",
+    "arataki_itto": "荒泷一斗",
+    "kaedehara_kazuha": "枫原万叶",
+    "lisa": "丽莎",
+    "sangonomiya_kokomi": "珊瑚宫心海",
+    "jean": "琴",
+    "yelan": "夜兰",
+    "neuvillette": "那维莱特",
+    "razor": "雷泽",
+    "klee": "可莉",
+    "lynette": "琳妮特",
+    "wanderer": "流浪者",
+    "kaveh": "卡维",
+    "lyney": "林尼",
+    "alhaitham": "艾尔海森",
+    "layla": "莱依拉",
+    "fischl": "菲谢尔",
+    "gorou": "五郎",
+    "kamisato_ayaka": "神里绫华",
+    "barbara": "芭芭拉",
+    "hu_tao": "胡桃",
+    "raiden_shogun": "雷电将军",
+    "qiqi": "七七",
+    "venti": "温迪",
+    "yae_miko": "八重神子",
+    "nahida": "纳西妲",
+    "sucrose": "砂糖",
+    "shenhe": "申鹤",
+    "xingqiu": "行秋",
+    "xianyun": "闲云",
+    "yun_jin": "云堇",
+    "navia": "娜维娅",
+    "mona": "莫娜",
+    "thoma": "托马",
+    "yoimiya": "宵宫",
+    "wriothesley": "莱欧斯利",
+    "faruzan": "珐露珊",
+    "kamisato_ayato": "神里绫人",
+    "tartaglia": "达达利亚",
+    "dehya": "迪希雅",
+    "albedo": "阿贝多",
+    "keqing": "刻晴",
+    "eula": "优菈",
+    "cyno": "赛诺",
+    "amber": "安柏",
+    "tighnari": "提纳里",
+    "diluc": "迪卢克",
+    "zhongli": "钟离",
+    "yanfei": "烟绯",
+    "furina": "芙宁娜",
+    "chongyun": "重云"
+}
+
+def replace_characters_with_chinese_names(tag_json_dict, mapping_dict):
+    # 存储成对结果的列表
+    paired_results = []
+
+    tag_json_dict_ = {"tag_json_dict_key": tag_json_dict}
+
+    # 遍历字典中的每个键值对
+    for key, value in tag_json_dict_.items():
+        # 提取 results 中 prediction 为 "Same" 的部分
+        same_results = [result for result in value.get("results", []) if result.get("prediction") == "Same"]
+        # 提取 characters 部分
+        characters = value.get("characters", {})
+        # 提取 features 中的 1boy 和 1girl 字段
+        features = value.get("features", {})
+        is_boy = features.get("1boy", 0) > 0.5  # 假设大于 0.5 表示存在
+        is_girl = features.get("1girl", 0) > 0.5  # 假设大于 0.5 表示存在
+
+        # 确定性别标签
+        gender_label = []
+        if is_boy:
+            gender_label.append("boy")
+        if is_girl:
+            gender_label.append("girl")
+        if not gender_label:
+            gender_label.append("unknown")  # 如果没有明确的性别标签，标记为 unknown
+
+        # 替换 characters 中的英文标签为中文名称
+        chinese_characters = {}
+        for tag, score in characters.items():
+            # 将 tag 转换为小写并去掉括号部分（如果有）
+            tag_normalized = tag.lower().split("_(")[0]
+            # 查找映射字典中的中文名称
+            chinese_name = mapping_dict.get(tag_normalized, tag)  # 如果找不到映射，保留原标签
+            chinese_characters[chinese_name] = score
+
+        # 如果 same_results 或 characters 不为空，则添加到结果中
+        if same_results or chinese_characters:
+            paired_results.append({
+                "same_results": same_results,
+                "characters": chinese_characters,
+                "gender_label": gender_label
+            })
+
+    return paired_results
+
+import numpy as np
+pd.DataFrame(df["tag_json"].map(lambda x: replace_characters_with_chinese_names(x, mapping_dict)).explode().dropna().values.tolist())[["characters", "gender_label"]].applymap(
+    lambda x: (x[0] if type(x) == type([]) else list(x.keys())[0]) if bool(x) else np.nan
+).dropna().groupby("characters")["gender_label"].apply(list).map(lambda x: pd.Series(x).value_counts().index[0]).to_dict()
+
+gender_dict =  {'七七': 'girl',
+ '久岐忍': 'girl',
+ '云堇': 'girl',
+ '五郎': 'boy',
+ '优菈': 'girl',
+ '八重神子': 'girl',
+ '凝光': 'girl',
+ '凯亚': 'boy',
+ '妮露': 'girl',
+ '安柏': 'girl',
+ '宵宫': 'girl',
+ '托马': 'boy',
+ '林尼': 'boy',
+ '枫原万叶': 'boy',
+ '柯莱': 'girl',
+ '温迪': 'boy',
+ '烟绯': 'girl',
+ '珊瑚宫心海': 'girl',
+ '珐露珊': 'girl',
+ '琳妮特': 'girl',
+ '琴': 'girl',
+ '甘雨': 'girl',
+ '申鹤': 'girl',
+ '砂糖': 'girl',
+ '神里绫人': 'boy',
+ '神里绫华': 'girl',
+ '纳西妲': 'girl',
+ '绮良良': 'girl',
+ '罗莎莉亚': 'girl',
+ '胡桃': 'girl',
+ '艾尔海森': 'boy',
+ '芙宁娜': 'girl',
+ '芭芭拉': 'girl',
+ '荒泷一斗': 'boy',
+ '行秋': 'boy',
+ '诺艾尔': 'girl',
+ '赛诺': 'boy',
+ '迪卢克': 'boy',
+ '迪奥娜': 'girl',
+ '重云': 'boy',
+ '钟离': 'boy',
+ '阿贝多': 'boy',
+ '雷泽': 'boy',
+ '雷电将军': 'girl',
+ '魈': 'boy',
+ '鹿野院平藏': 'boy'}
+
+df["tag_json"].map(
+    lambda x: replace_characters_with_chinese_names(x, mapping_dict)            
+).map(
+    lambda l: all(map(lambda d: gender_dict.get(list(d["characters"].keys())[0], None) == d["gender_label"][0] if len(d["characters"]) == len(d["gender_label"]) == 1 else False, l))
+).value_counts()
+
+l = df[
+   df["tag_json"].map(
+    lambda x: replace_characters_with_chinese_names(x, mapping_dict)            
+).map(
+    lambda l: all(map(lambda d: gender_dict.get(list(d["characters"].keys())[0], None) == d["gender_label"][0] if len(d["characters"]) == len(d["gender_label"]) == 1 else False, l))
+) 
+].index.tolist()
+len(l)
+
+ds["train"].select(l).push_to_hub("svjack/Genshin-Impact-Portrait-with-Tags-Filtered-IID-Gender")
+```
 
 
 ```python
