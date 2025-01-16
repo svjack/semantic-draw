@@ -728,6 +728,26 @@ len(l)
 ds["train"].select(l).push_to_hub("svjack/Genshin-Impact-Couple-with-Tags-IID-Gender")
 ```
 
+- Couple Image only Two
+```python
+from datasets import load_dataset 
+import json 
+import pandas as pd 
+from tqdm import tqdm
+
+ds = load_dataset("svjack/Genshin-Impact-Couple-with-Tags-IID-Gender")
+df = ds["train"].remove_columns(["image"]).to_pandas()
+
+df = df[
+    df["tag_json"].map(json.loads).map(lambda x: len(x) == 2)
+]
+
+l = df.index.tolist()
+len(l)
+
+ds["train"].select(l).push_to_hub("svjack/Genshin-Impact-Couple-with-Tags-IID-Gender-Only-Two")
+```
+
 
 - Single Image Validation
 ```python
